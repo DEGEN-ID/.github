@@ -1,0 +1,5 @@
+# Pick dependency versions compatible with the package's rust-version (1.84,
+# what Solana platform-tools ship) instead of the newest — avoids transitive
+# crates that require rustc 1.85 / edition2024.
+[resolver]
+incompatible-rust-versions = "fallback"

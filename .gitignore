@@ -1,0 +1,7 @@
+.DS_Store
+node_modules
+contracts/target
+contracts/.anchor
+contracts/test-ledger
+contracts/node_modules
+*.log

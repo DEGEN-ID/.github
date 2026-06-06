@@ -1,0 +1,708 @@
+{
+  "address": "ADnrpikhh6f13ZcqWVenEqQzo5TrNj5Xbo4w8L5Jx4pZ",
+  "metadata": {
+    "name": "degen_id",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Degen Id — soulbound on-chain identity card, $DIDID hold-gated"
+  },
+  "instructions": [
+    {
+      "name": "close_config",
+      "docs": [
+        "Admin: close the config account and refund its rent (wind-down). The",
+        "program account itself (the bulk of the deploy cost) is reclaimed",
+        "separately via `solana program close <id>` — which requires the upgrade",
+        "authority to still be active. See README → \"Reclaiming rent\"."
+      ],
+      "discriminator": [
+        145,
+        9,
+        72,
+        157,
+        95,
+        125,
+        61,
+        85
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize",
+      "docs": [
+        "One-time setup: create the program config. The caller becomes `admin`.",
+        "Run this once right after deploy (before the $DIDID token exists). The",
+        "$DIDID mint starts unset, so minting is closed until `set_didid_mint`."
+      ],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "mint_identity",
+      "docs": [
+        "Mint a soulbound Degen Id identity card to `owner`.",
+        "",
+        "- Requires the official $DIDID mint to be configured (token launched).",
+        "- Verifies `didid_mint` IS that official mint, then re-verifies the",
+        "caller holds ≥ HOLD_REQUIREMENT on-chain (never trusts the client).",
+        "- Mints 1 token (0 decimals), freezes the owner's account (soulbound),",
+        "drops the mint authority (supply fixed at 1), and records the archetype",
+        "+ score in a per-wallet PDA (one card per wallet)."
+      ],
+      "discriminator": [
+        52,
+        13,
+        109,
+        146,
+        207,
+        249,
+        188,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Program config — holds the official $DIDID mint the gate is pinned to."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "didid_mint",
+          "docs": [
+            "The $DIDID mint used for the hold-gate (verified == config.didid_mint)."
+          ]
+        },
+        {
+          "name": "holder_didid_ata",
+          "docs": [
+            "The owner's $DIDID token account — its balance is the hold-gate check."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "didid_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "mint_authority",
+          "docs": [
+            "PDA that is both mint authority and freeze authority for identity NFTs."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "identity_mint",
+          "docs": [
+            "The fresh identity-card mint (client passes a new keypair)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "owner_identity_ata",
+          "docs": [
+            "The owner's token account for the identity NFT."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "identity_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "card",
+          "docs": [
+            "One card per wallet — these seeds make a second mint fail."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "CardArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_didid_mint",
+      "docs": [
+        "Admin-only: point the gate at the official $DIDID mint. Call this when the",
+        "token launches — no redeploy needed. (Admin may update it; transfer admin",
+        "to a multisig / accept it's a trust point until then.)"
+      ],
+      "discriminator": [
+        168,
+        217,
+        0,
+        56,
+        221,
+        15,
+        196,
+        199
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "mint",
+          "type": "pubkey"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "IdentityCard",
+      "discriminator": [
+        87,
+        70,
+        215,
+        106,
+        217,
+        81,
+        189,
+        95
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "DididMintSet",
+      "discriminator": [
+        56,
+        84,
+        248,
+        65,
+        186,
+        9,
+        53,
+        3
+      ]
+    },
+    {
+      "name": "IdentityMinted",
+      "discriminator": [
+        0,
+        147,
+        116,
+        91,
+        233,
+        80,
+        86,
+        17
+      ]
+    },
+    {
+      "name": "Initialized",
+      "discriminator": [
+        208,
+        213,
+        115,
+        98,
+        115,
+        82,
+        201,
+        209
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MintNotConfigured",
+      "msg": "$DIDID mint not configured yet — minting is closed"
+    },
+    {
+      "code": 6001,
+      "name": "WrongDididMint",
+      "msg": "Provided mint is not the official $DIDID mint"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientHold",
+      "msg": "Wallet does not hold enough $DIDID to mint"
+    },
+    {
+      "code": 6003,
+      "name": "ArchetypeTooLong",
+      "msg": "Archetype string too long (max 16)"
+    },
+    {
+      "code": 6004,
+      "name": "ScoreOutOfRange",
+      "msg": "Score must be 0..=1000"
+    },
+    {
+      "code": 6005,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "CardArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "archetype",
+            "type": "string"
+          },
+          {
+            "name": "score",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "didid_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DididMintSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "IdentityCard",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "archetype",
+            "type": "string"
+          },
+          {
+            "name": "score",
+            "type": "u16"
+          },
+          {
+            "name": "minted_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "IdentityMinted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "archetype",
+            "type": "string"
+          },
+          {
+            "name": "score",
+            "type": "u16"
+          },
+          {
+            "name": "minted_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Initialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}
